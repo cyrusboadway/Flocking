@@ -2,8 +2,8 @@
 	var BIRD_COUNT = 200;
 	var FRAME_RATE = 24;
 	var BIRD_MAX_VELOCITY = 100;
-	var CANVAS_WIDTH = document.getElementById(canvasElementId).offsetWidth;
-	var CANVAS_HEIGHT = document.getElementById(canvasElementId).offsetHeight;
+	var CANVAS_WIDTH = window.innerWidth;
+	var CANVAS_HEIGHT = window.innerHeight;
 	var CLOSENESS = 10;
 
 // Vector class
@@ -129,12 +129,12 @@
 	 * @constructor
 	 */
 	var Environment = function(){
+		this.birds = [];
 		this.canvas = document.getElementById(canvasElementId);
 		this.canvas.width = CANVAS_WIDTH;
 		this.canvas.height = CANVAS_HEIGHT;
 		this.context = this.canvas.getContext('2d');
-		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		this.birds = [];
+		this.context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	};
 	/**
 	 * Add a bird to the system. It will be assigned a random position and initial velocity
