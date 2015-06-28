@@ -1,10 +1,11 @@
 (function(document, window, canvasElementId){
-	var BIRD_COUNT = 200;
+	var BIRD_COUNT = 2;
+	var BIRD_WIDTH = 10;
 	var FRAME_RATE = 24;
 	var BIRD_MAX_VELOCITY = 100;
 	var CANVAS_WIDTH = window.innerWidth;
 	var CANVAS_HEIGHT = window.innerHeight;
-	var CLOSENESS = 10;
+	var CLOSENESS = 100;
 
 // Vector class
 	var Vector = function(x, y){
@@ -76,16 +77,30 @@
 		this.acceleration = new Vector(0, 0);
 	};
 	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
+		// Too close! 1/x repulsive force
 		{
 			'membershipFunction' : function(bird, destinationBird){
-				var distance = bird.position.subtract(destinationBird).getMagnitude();
+				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
 				return distance < CLOSENESS;
 			},
 			'resultFunction' : function(bird, destinationBird){
 				var test = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = bird.position.subtract(test);
-				return Vector.newFromPolar(1 / difference.getMagnitude(), difference.getBearing());
+				return Vector.newFromPolar(100 / difference.getMagnitude(), difference.getBearing());
+			}
+		},
+		// Kinda close. Attract x^2
+		{
+			'membershipFunction' : function(bird, destinationBird){
+				var distance = bird.position.subtract(destinationBird).getMagnitude();
+				return distance > CLOSENESS && distance < CLOSENESS * 5;
+			},
+			'resultFunction' : function(bird, destinationBird){
+				var test = env.findClosestLatticeLocation(bird, destinationBird);
+				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
+				var difference = test.position.subtract(bird);
+				return Vector.newFromPolar(Math.pow(CLOSENESS - difference.getMagnitude(), 2), difference.getBearing());
 			}
 		}
 	];
@@ -160,7 +175,7 @@
 	 */
 	Environment.prototype.eraseBird = function(bird){
 		this.context.fillStyle = 'black';
-		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), 1, 1);
+		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
 	};
 	/**
 	 * Draw the bird; it will be assigned a colour based on its id
@@ -169,7 +184,7 @@
 	Environment.prototype.drawBird = function(bird){
 		var colors = ['white', 'red', 'blue', 'green'];
 		this.context.fillStyle = colors[bird.id % colors.length];
-		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), 1, 1);
+		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
 	};
 	/**
 	 * Since the canvas "wraps", birds on opposite sides of the canvas should be influenced across the canvas edge,
