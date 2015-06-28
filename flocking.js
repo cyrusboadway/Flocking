@@ -24,7 +24,7 @@
 	 * @returns {number}
 	 */
 	Vector.prototype.getBearing = function(){
-		return Math.atan(this.y / this.x);
+		return Math.atan2(this.y, this.x);
 	};
 	/**
 	 * Produce a vector whose magnitude is scaled
@@ -77,29 +77,28 @@
 		this.acceleration = new Vector(0, 0);
 	};
 	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
-		// Too close! 1/x repulsive force
 		{
 			'membershipFunction' : function(bird, destinationBird){
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
 				return distance < CLOSENESS;
 			},
 			'resultFunction' : function(bird, destinationBird){
-				var test = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
-				var difference = bird.position.subtract(test);
+				var difference = bird.position.subtract(nearestLattice);
 				return Vector.newFromPolar(100 / difference.getMagnitude(), difference.getBearing());
 			}
 		},
 		// Kinda close. Attract x^2
 		{
 			'membershipFunction' : function(bird, destinationBird){
-				var distance = bird.position.subtract(destinationBird).getMagnitude();
+				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
 				return distance > CLOSENESS && distance < CLOSENESS * 5;
 			},
 			'resultFunction' : function(bird, destinationBird){
-				var test = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
-				var difference = test.position.subtract(bird);
+				var difference = nearestLattice.subtract(bird.position);
 				return Vector.newFromPolar(Math.pow(CLOSENESS - difference.getMagnitude(), 2), difference.getBearing());
 			}
 		}
