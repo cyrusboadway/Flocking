@@ -77,13 +77,14 @@
 	};
 	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
 		{
-			'membershipFunction' : function(distance){
+			'membershipFunction' : function(bird, destinationBird){
+				var distance = bird.position.subtract(destinationBird).getMagnitude();
 				return distance < CLOSENESS;
 			},
-			'resultFunction' : function(originBird, destinationBird){
-				var test = env.findClosestLatticeLocation(originBird, destinationBird);
+			'resultFunction' : function(bird, destinationBird){
+				var test = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
-				var difference = originBird.position.subtract(test);
+				var difference = bird.position.subtract(test);
 				return Vector.newFromPolar(1 / difference.getMagnitude(), difference.getBearing());
 			}
 		}
@@ -99,10 +100,12 @@
 				return;
 			}
 			this.FUZZY_RULES.forEach(function(rule){
-				var membership = rule.membershipFunction(this.position.subtract(bird.position).getMagnitude());
-				var result = rule.resultFunction(this, bird);
-				// apply fuzzy logic influence on acceleration
-				this.acceleration = this.acceleration.add(result.scale(membership));
+				var membership = rule.membershipFunction(this, bird);
+				if(membership > 0){
+					// rule must be considered
+					var result = rule.resultFunction(this, bird);
+					this.acceleration = this.acceleration.add(result.scale(membership));
+				}
 			}, this);
 		}, this);
 	};
