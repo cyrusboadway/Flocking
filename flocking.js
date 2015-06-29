@@ -1,5 +1,5 @@
 (function (document, window, canvasElementId) {
-	var BIRD_COUNT = 2;
+	var BIRD_COUNT = 200;
 	var BIRD_WIDTH = 10;
 	var FRAME_RATE = 24;
 	var BIRD_MAX_VELOCITY = 100;
@@ -79,11 +79,23 @@
 		);
 		this.acceleration = new Vector(0, 0);
 	};
+	Bird.FUZZY_MEMBERSHIP_FUNCTIONS = {
+		'Trapezoid': function (x, a, b, c, d) {
+			return Math.max(0, Math.min((x - a) / (b - a), 1, (c - x) / (d - c)));
+		},
+		'Triangle': function (x, a, b, c) {
+			return Math.max(0, Math.min((x - a) / (b - a), (c - x) / (c - b)));
+		},
+		'Square': function (x, a, b) {
+			return (a < x && x < b) ? 1.0 : 0.0;
+		}
+	};
 	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return distance < CLOSENESS;
+				var membershipFunction = Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'];
+				return membershipFunction(distance, 0, 0, CLOSENESS);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
@@ -96,13 +108,13 @@
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return distance > CLOSENESS && distance < CLOSENESS * 5;
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Trapezoid'](distance, CLOSENESS, 2 * CLOSENESS, 5 * CLOSENESS, 5 * CLOSENESS);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
-				return Vector.newFromPolar(Math.pow(CLOSENESS - difference.getMagnitude(), 2), difference.getBearing());
+				return Vector.newFromPolar(100, difference.getBearing());
 			}
 		}
 	];
@@ -137,8 +149,8 @@
 		// update position
 		this.position = this.position.add(this.velocity.scale(1 / FRAME_RATE));
 		// wrap around canvas edges
-		this.position.x %= CANVAS_WIDTH;
-		this.position.y %= CANVAS_HEIGHT;
+		this.position.x = (this.position.x + CANVAS_WIDTH) % CANVAS_WIDTH;
+		this.position.y = (this.position.y + CANVAS_HEIGHT) % CANVAS_HEIGHT;
 	};
 
 // Environment
