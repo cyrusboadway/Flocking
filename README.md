@@ -10,7 +10,7 @@ I'm going to see if I can build a simple fuzzy logic flocking algorithm in javas
 - [x] Geometry tools
 - [x] Bird class
 - [x] "World"
-- [-] Fuzzy logic framework
+- [ ] Fuzzy logic framework
 	- [ ] membership functions
 	- [ ] output action logic
 - [ ] Fuzzy rules
