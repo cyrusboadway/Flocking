@@ -94,21 +94,20 @@
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				var membershipFunction = Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'];
-				return membershipFunction(distance, 0, 0, CLOSENESS);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, CLOSENESS);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = bird.position.subtract(nearestLattice);
-				return Vector.newFromPolar(100 / difference.getMagnitude(), difference.getBearing());
+				return Vector.newFromPolar(1000 / difference.getMagnitude(), difference.getBearing());
 			}
 		},
 		// Kinda close. Attract x^2
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Trapezoid'](distance, CLOSENESS, 2 * CLOSENESS, 5 * CLOSENESS, 5 * CLOSENESS);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, CLOSENESS, 2 * CLOSENESS, 3 * CLOSENESS);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
