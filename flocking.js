@@ -5,7 +5,8 @@
 	var BIRD_MAX_VELOCITY = 100;
 	var CANVAS_WIDTH = window.innerWidth;
 	var CANVAS_HEIGHT = window.innerHeight;
-	var CLOSENESS = 100;
+	var CLOSENESS = 200;
+	var INFLUENCE = 400;
 
 // Vector class
 	var Vector = function (x, y) {
@@ -103,7 +104,6 @@
 				return Vector.newFromPolar(1000 / difference.getMagnitude(), difference.getBearing());
 			}
 		},
-		// Kinda close. Attract x^2
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
@@ -113,7 +113,18 @@
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
-				return Vector.newFromPolar(100, difference.getBearing());
+				return Vector.newFromPolar(10, difference.getBearing());
+			}
+		},
+		{
+			'membershipFunction': function (bird, destinationBird) {
+				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, CLOSENESS, (CLOSENESS + INFLUENCE)/2, INFLUENCE);
+			},
+			'resultFunction': function (bird, destinationBird) {
+				//var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
+				return Vector.newFromPolar(10, destinationBird.velocity.getBearing());
 			}
 		}
 	];
