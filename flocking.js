@@ -124,10 +124,12 @@
 	 * These are the set of rules by which the birds determine in which direction to accelerate. The rules compete for
 	 * control of the bird's acceleration. The membership function is used to determine to what degree the rule should
 	 * be applied. The result function determines what action should be take (i.e. direction, magnitude of accel.).
+	 * heh. bird brain.
 	 *
 	 * @type {*[]}
 	 */
-	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
+	Bird.prototype.FUZZY_RULES = [
+		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
@@ -140,6 +142,7 @@
 				return Vector.newFromPolar(1000 / difference.getMagnitude(), difference.getBearing());
 			}
 		},
+		// CLOSE, PUSH TOGETHER: close enough to be influenced, bringing them closer together
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
@@ -152,6 +155,7 @@
 				return Vector.newFromPolar(10, difference.getBearing());
 			}
 		},
+		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
@@ -172,14 +176,17 @@
 	 */
 	Bird.prototype.updateAcceleration = function (env) {
 		this.acceleration = new Vector(0, 0);
+		// Check rules for this bird to all other birds
 		env.birds.forEach(function (bird) {
 			if (this.id == bird.id) {
+				// Bird does not influence itself
 				return;
 			}
+			// Check each rule against each fuzzy rule
 			this.FUZZY_RULES.forEach(function (rule) {
 				var membership = rule.membershipFunction(this, bird);
 				if (membership > 0) {
-					// rule must be considered
+					// the rule applies to some degree
 					var result = rule.resultFunction(this, bird);
 					this.acceleration = this.acceleration.add(result.scale(membership));
 				}
@@ -242,6 +249,7 @@
 		this.context.fillStyle = 'black';
 		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
 	};
+
 	/**
 	 * Draw the bird; it will be assigned a colour based on its ID
 	 *
@@ -252,6 +260,7 @@
 		this.context.fillStyle = colors[bird.id % colors.length];
 		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
 	};
+
 	/**
 	 * Since the canvas "wraps", birds on opposite sides of the canvas should be influenced across the canvas edge,
 	 * rather than directly
