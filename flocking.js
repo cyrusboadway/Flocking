@@ -9,50 +9,70 @@
 	var INFLUENCE = 400;
 
 // Vector class
+
+	/**
+	 * Simple representation of a vector (magnitude, direction), with a few helper methods for adding/subtracting, etc.
+	 *
+	 * @param {number} x
+	 * @param {number} y
+	 * @constructor
+	 */
 	var Vector = function (x, y) {
 		this.x = x;
 		this.y = y;
 	};
+
 	/**
 	 * Get the vector 'length'
+	 *
 	 * @returns {number}
 	 */
 	Vector.prototype.getMagnitude = function () {
 		return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
 	};
+
 	/**
 	 * Get the angle in rad. of the vector
+	 *
 	 * @returns {number}
 	 */
 	Vector.prototype.getBearing = function () {
 		return Math.atan2(this.y, this.x);
 	};
+
 	/**
 	 * Produce a vector whose magnitude is scaled
+	 *
 	 * @param {number} scale
 	 * @returns {Vector}
 	 */
 	Vector.prototype.scale = function (scale) {
 		return new Vector(this.x * scale, this.y * scale);
 	};
+
 	/**
 	 * Produce a new vector as the sum of this and the given vector (i.e. v¹ + v²)
+	 *
 	 * @param {Vector} vector
 	 * @returns {Vector}
 	 */
 	Vector.prototype.add = function (vector) {
 		return new Vector(this.x + vector.x, this.y + vector.y);
 	};
+
 	/**
 	 * Produce a new vector as this vector less the given vector (i.e. v¹ - v², v¹ is `this`)
+	 *
 	 * @param {Vector} vector
 	 * @returns {Vector}
 	 */
 	Vector.prototype.subtract = function (vector) {
 		return new Vector(this.x - vector.x, this.y - vector.y);
 	};
+
 	/**
 	 * Create a new vector from a magnitude (i.e. radius) and an bearing (i.e. angle)
+	 *
 	 * @param {number} magnitude of the vector
 	 * @param {number} bearing of the vector, in rad.
 	 * @returns {Vector}
@@ -69,6 +89,7 @@
 	/**
 	 * The bird has basic newtonian properties (position, velocity, acceleration). The only parameter directly affected
 	 * is the acceleration, which is applied to influence velocity and in turn position.
+	 *
 	 * @constructor
 	 */
 	var Bird = function () {
@@ -80,6 +101,13 @@
 		);
 		this.acceleration = new Vector(0, 0);
 	};
+
+	/**
+	 * Fuzzy membership functions are used to determine how much influence a particular rule should have at the instant
+	 * of evaluation
+	 *
+	 * @type {{Trapezoid: Function, Triangle: Function, Square: Function}}
+	 */
 	Bird.FUZZY_MEMBERSHIP_FUNCTIONS = {
 		'Trapezoid': function (x, a, b, c, d) {
 			return Math.max(0, Math.min((x - a) / (b - a), 1, (c - x) / (d - c)));
@@ -91,6 +119,14 @@
 			return (a < x && x < b) ? 1.0 : 0.0;
 		}
 	};
+
+	/**
+	 * These are the set of rules by which the birds determine in which direction to accelerate. The rules compete for
+	 * control of the bird's acceleration. The membership function is used to determine to what degree the rule should
+	 * be applied. The result function determines what action should be take (i.e. direction, magnitude of accel.).
+	 *
+	 * @type {*[]}
+	 */
 	Bird.prototype.FUZZY_RULES = [	// heh. bird brain.
 		{
 			'membershipFunction': function (bird, destinationBird) {
@@ -128,8 +164,10 @@
 			}
 		}
 	];
+
 	/**
 	 * Recalculate the acceleration to be applied to the object (i.e. apply fuzzy logic rules).
+	 *
 	 * @param {Environment} env
 	 */
 	Bird.prototype.updateAcceleration = function (env) {
@@ -148,6 +186,7 @@
 			}, this);
 		}, this);
 	};
+
 	/**
 	 * Apply acceleration to velocity and position
 	 */
@@ -168,6 +207,7 @@
 	/**
 	 * The environment maintains the collection of birds and orchestrates their movements and their expression on the
 	 * canvas UI
+	 *
 	 * @constructor
 	 */
 	var Environment = function () {
@@ -195,6 +235,7 @@
 	};
 	/**
 	 * Black out the bird's current position
+	 *
 	 * @param {Bird} bird
 	 */
 	Environment.prototype.eraseBird = function (bird) {
@@ -202,7 +243,8 @@
 		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
 	};
 	/**
-	 * Draw the bird; it will be assigned a colour based on its id
+	 * Draw the bird; it will be assigned a colour based on its ID
+	 *
 	 * @param {Bird} bird
 	 */
 	Environment.prototype.drawBird = function (bird) {
@@ -232,6 +274,7 @@
 			closestLatticeNode(originBird.position.y, destinationBird.position.y, this.canvas.height)
 		);
 	};
+
 	/**
 	 * Big time sequence moving the birds, having them interact with each other
 	 */
