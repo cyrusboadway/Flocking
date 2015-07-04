@@ -225,15 +225,17 @@
 
 	/**
 	 * Add a bird to the system. It will be assigned a random position and initial velocity
-	 * @param {Bird} bird
 	 */
-	Environment.prototype.addBird = function (bird) {
+	Environment.prototype.addBird = function () {
+		var bird = new Bird();
+
 		// Provide bird with initial random position & velocity
 		bird.position = new Vector(Math.random() * this.canvas.width, Math.random() * this.canvas.height);
 		bird.velocity = new Vector(
-			Math.random() * 2 * 200 - 200,	// TODO Remove magin
-			Math.random() * 2 * 200 - 200
+			200 * (Math.random() * 2 - 1),
+			200 * (Math.random() * 2 - 1)
 		);
+		bird.acceleration = new Vector(0, 0);
 		bird.id = this.birds.length;
 		bird.env = env;
 		this.birds.push(bird);
@@ -307,8 +309,7 @@
 	var env = new Environment();
 	// Add birds
 	for (var i = 0; i < initialBirdCount; i++) {
-		var bird = new Bird();
-		env.addBird(bird);
+		env.addBird();
 	}
 	env.run();
 
