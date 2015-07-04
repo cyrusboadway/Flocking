@@ -1,12 +1,4 @@
-(function (document, window, canvasElementId) {
-	var BIRD_COUNT = 200;
-	var BIRD_WIDTH = 10;
-	var FRAME_RATE = 24;
-	var BIRD_MAX_VELOCITY = 100;
-	var CANVAS_WIDTH = window.innerWidth;
-	var CANVAS_HEIGHT = window.innerHeight;
-	var CLOSENESS = 200;
-	var INFLUENCE = 400;
+(function (document, window, canvasElementId, initialBirdCount) {
 
 // Vector class
 
@@ -95,11 +87,15 @@
 	var Bird = function () {
 		this.id = null;
 		this.position = null;
-		this.velocity = new Vector(
-			Math.random() * 2 * BIRD_MAX_VELOCITY - BIRD_MAX_VELOCITY,
-			Math.random() * 2 * BIRD_MAX_VELOCITY - BIRD_MAX_VELOCITY
-		);
-		this.acceleration = new Vector(0, 0);
+		this.velocity = null;
+		this.acceleration = null;
+		this.env = null;
+
+		// config
+		this.width = 10;
+		this.closeness = 200;
+		this.influence = 400;
+		this.maxVelocity = 100;
 	};
 
 	/**
@@ -133,7 +129,7 @@
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, CLOSENESS);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, this.closeness);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
@@ -146,7 +142,7 @@
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, CLOSENESS, 2 * CLOSENESS, 3 * CLOSENESS);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, 2 * bird.closeness, 3 * bird.closeness);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
@@ -159,7 +155,7 @@
 		{
 			'membershipFunction': function (bird, destinationBird) {
 				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, CLOSENESS, (CLOSENESS + INFLUENCE)/2, INFLUENCE);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, (bird.closeness + bird.influence) / 2, bird.influence);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				//var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
@@ -197,16 +193,16 @@
 	/**
 	 * Apply acceleration to velocity and position
 	 */
-	Bird.prototype.move = function () {
+	Bird.prototype.move = function (stepSize) {
 		// change velocity
-		this.velocity = this.velocity.add(this.acceleration.scale(1 / FRAME_RATE));
+		this.velocity = this.velocity.add(this.acceleration.scale(stepSize));
 		// scale velocity back to max
-		this.velocity = this.velocity.scale(Math.min(1, BIRD_MAX_VELOCITY / this.velocity.getMagnitude()));
+		this.velocity = this.velocity.scale(Math.min(1, this.maxVelocity / this.velocity.getMagnitude()));
 		// update position
-		this.position = this.position.add(this.velocity.scale(1 / FRAME_RATE));
+		this.position = this.position.add(this.velocity.scale(stepSize));
 		// wrap around canvas edges
-		this.position.x = (this.position.x + CANVAS_WIDTH) % CANVAS_WIDTH;
-		this.position.y = (this.position.y + CANVAS_HEIGHT) % CANVAS_HEIGHT;
+		this.position.x = (this.position.x + this.env.canvas.width) % this.env.canvas.width;
+		this.position.y = (this.position.y + this.env.canvas.height) % this.env.canvas.height;
 	};
 
 // Environment
@@ -219,27 +215,31 @@
 	 */
 	var Environment = function () {
 		this.birds = [];
+		this.frameRate = 24;
 		this.canvas = document.getElementById(canvasElementId);
-		this.canvas.width = CANVAS_WIDTH;
-		this.canvas.height = CANVAS_HEIGHT;
+		this.canvas.width = this.canvas.offsetWidth;
+		this.canvas.height = this.canvas.offsetHeight;
 		this.context = this.canvas.getContext('2d');
-		this.context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 	};
+
 	/**
 	 * Add a bird to the system. It will be assigned a random position and initial velocity
 	 * @param {Bird} bird
 	 */
 	Environment.prototype.addBird = function (bird) {
 		// Provide bird with initial random position & velocity
-		bird.position = new Vector(Math.random() * CANVAS_WIDTH, Math.random() * CANVAS_HEIGHT);
+		bird.position = new Vector(Math.random() * this.canvas.width, Math.random() * this.canvas.height);
 		bird.velocity = new Vector(
-			Math.random() * 2 * BIRD_MAX_VELOCITY - BIRD_MAX_VELOCITY,
-			Math.random() * 2 * BIRD_MAX_VELOCITY - BIRD_MAX_VELOCITY
+			Math.random() * 2 * 200 - 200,	// TODO Remove magin
+			Math.random() * 2 * 200 - 200
 		);
 		bird.id = this.birds.length;
+		bird.env = env;
 		this.birds.push(bird);
 		this.drawBird(bird);
 	};
+
 	/**
 	 * Black out the bird's current position
 	 *
@@ -247,7 +247,7 @@
 	 */
 	Environment.prototype.eraseBird = function (bird) {
 		this.context.fillStyle = 'black';
-		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
+		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), bird.width, bird.width);
 	};
 
 	/**
@@ -258,7 +258,7 @@
 	Environment.prototype.drawBird = function (bird) {
 		var colors = ['white', 'red', 'blue', 'green'];
 		this.context.fillStyle = colors[bird.id % colors.length];
-		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), BIRD_WIDTH, BIRD_WIDTH);
+		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), bird.width, bird.width);
 	};
 
 	/**
@@ -290,14 +290,15 @@
 	Environment.prototype.run = function () {
 		var birds = this.birds;
 		var env = this;
+		var frameRate = this.frameRate;
 		setInterval(function () {
 			birds.forEach(function (bird) {
 				env.eraseBird(bird);
 				bird.updateAcceleration(env);
-				bird.move();
+				bird.move(1 / frameRate);
 				env.drawBird(bird);
 			});
-		}, 1000 / FRAME_RATE);
+		}, 1000 / this.frameRate);
 	};
 
 // Runtime
@@ -305,10 +306,10 @@
 	// Create the environment
 	var env = new Environment();
 	// Add birds
-	for (var i = 0; i < BIRD_COUNT; i++) {
+	for (var i = 0; i < initialBirdCount; i++) {
 		var bird = new Bird();
 		env.addBird(bird);
 	}
 	env.run();
 
-}(document, window, 'canvas'));
+}(document, window, 'canvas', 200));
