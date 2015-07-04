@@ -128,8 +128,9 @@
 		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
 			'membershipFunction': function (bird, destinationBird) {
-				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, this.closeness);
+				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var distance = bird.position.subtract(nearestLattice).getMagnitude();
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness);
 			},
 			'resultFunction': function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
@@ -141,7 +142,8 @@
 		// CLOSE, PUSH TOGETHER: close enough to be influenced, bringing them closer together
 		{
 			'membershipFunction': function (bird, destinationBird) {
-				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
+				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, 2 * bird.closeness, 3 * bird.closeness);
 			},
 			'resultFunction': function (bird, destinationBird) {
@@ -154,7 +156,8 @@
 		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
 		{
 			'membershipFunction': function (bird, destinationBird) {
-				var distance = bird.position.subtract(destinationBird.position).getMagnitude();
+				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, (bird.closeness + bird.influence) / 2, bird.influence);
 			},
 			'resultFunction': function (bird, destinationBird) {
