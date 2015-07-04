@@ -231,13 +231,13 @@
 
 		// Provide bird with initial random position & velocity
 		bird.position = new Vector(Math.random() * this.canvas.width, Math.random() * this.canvas.height);
-		bird.velocity = new Vector(
-			200 * (Math.random() * 2 - 1),
-			200 * (Math.random() * 2 - 1)
-		);
+		bird.velocity = new Vector(200 * (Math.random() * 2 - 1), 200 * (Math.random() * 2 - 1));
 		bird.acceleration = new Vector(0, 0);
+
+		// Give bird's max velocity a ±30% jitter
+		bird.maxVelocity = bird.maxVelocity * (1 + (Math.random() * 2 - 1) * 0.3);
 		bird.id = this.birds.length;
-		bird.env = env;
+		bird.env = this;
 		this.birds.push(bird);
 		this.drawBird(bird);
 	};
