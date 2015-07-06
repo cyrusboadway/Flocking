@@ -13,7 +13,5 @@ I'm going to see if I can build a simple fuzzy logic flocking algorithm in javas
 - [x] Fuzzy logic framework
 	- [x] membership functions
 	- [x] output action logic
-- [ ] Fuzzy rules
-- [ ] Extract fuzzy logic into a class "engine"
-- [ ] _Predators (cursor? individual with different logic?)_
-- [ ] _Maybe play around with [Jasmine](https://jasmine.github.io/)_?
+- [x] Fuzzy rules
+- [x] Mouse Cursor Predator
