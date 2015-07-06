@@ -1,17 +1,12 @@
 Flocking
 ========
 
-I'm going to see if I can build a simple fuzzy logic flocking algorithm in javascript, illustrated on an HTML5 canvas.
+A Fuzzy Logic powered bird flocking simulation, including predator influence from the mouse.
 
-//TODO
-------
+Birds accelerate in a given direction using the following rules:
 
-- [x] UI
-- [x] Geometry tools
-- [x] Bird class
-- [x] "World"
-- [x] Fuzzy logic framework
-	- [x] membership functions
-	- [x] output action logic
-- [x] Fuzzy rules
-- [x] Mouse Cursor Predator
+1. "Flock Together": when a bird is near enough, the bird will try to move towards that bird.
+2. "Flock Apart": when a bird is too near, push apart.
+3. "Direction": when a bird is close enough, adjust one's direction to match that of the other.
+
+The birds also have a "field of vision", which restricts the influence of other birds to those in front of it.
