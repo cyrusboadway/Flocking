@@ -96,6 +96,8 @@
 		this.closeness = 200;
 		this.influence = 400;
 		this.maxVelocity = 100;
+		this.maxVelocityJitter = 0.2;
+		this.fieldOfVision = Math.PI;
 	};
 
 	/**
@@ -116,6 +118,16 @@
 		}
 	};
 
+	Bird.inFieldOfVision = function (sourceBird, destinationBird) {
+		var headingOne = sourceBird.velocity.getBearing();
+		var headingTwo = destinationBird.position.subtract(sourceBird.position).getBearing();
+		var difference = headingTwo - headingOne;
+		if (difference > Math.PI) {
+			difference = Math.min(headingOne, headingTwo) + 2 * Math.PI - Math.max(headingOne, headingTwo);
+		}
+		return difference < sourceBird.fieldOfVision;
+	};
+
 	/**
 	 * These are the set of rules by which the birds determine in which direction to accelerate. The rules compete for
 	 * control of the bird's acceleration. The membership function is used to determine to what degree the rule should
@@ -127,12 +139,15 @@
 	Bird.prototype.FUZZY_RULES = [
 		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
-			'membershipFunction': function (bird, destinationBird) {
+			membershipFunction: function (bird, destinationBird) {
+				if (!Bird.inFieldOfVision(bird, destinationBird)) {
+					return 0;
+				}
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness);
 			},
-			'resultFunction': function (bird, destinationBird) {
+			resultFunction: function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = bird.position.subtract(nearestLattice);
@@ -141,12 +156,15 @@
 		},
 		// CLOSE, PUSH TOGETHER: close enough to be influenced, bringing them closer together
 		{
-			'membershipFunction': function (bird, destinationBird) {
+			membershipFunction: function (bird, destinationBird) {
+				if (!Bird.inFieldOfVision(bird, destinationBird)) {
+					return 0;
+				}
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, 2 * bird.closeness, 3 * bird.closeness);
 			},
-			'resultFunction': function (bird, destinationBird) {
+			resultFunction: function (bird, destinationBird) {
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
@@ -155,12 +173,15 @@
 		},
 		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
 		{
-			'membershipFunction': function (bird, destinationBird) {
+			membershipFunction: function (bird, destinationBird) {
+				if (!Bird.inFieldOfVision(bird, destinationBird)) {
+					return 0;
+				}
 				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, (bird.closeness + bird.influence) / 2, bird.influence);
 			},
-			'resultFunction': function (bird, destinationBird) {
+			resultFunction: function (bird, destinationBird) {
 				//var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				return Vector.newFromPolar(10, destinationBird.velocity.getBearing());
@@ -238,7 +259,7 @@
 		bird.acceleration = new Vector(0, 0);
 
 		// Give bird's max velocity a ±30% jitter
-		bird.maxVelocity = bird.maxVelocity * (1 + (Math.random() * 2 - 1) * 0.3);
+		bird.maxVelocity = bird.maxVelocity * (1 + (Math.random() * 2 - 1) * bird.maxVelocityJitter);
 		bird.id = this.birds.length;
 		bird.env = this;
 		this.birds.push(bird);
