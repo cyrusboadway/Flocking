@@ -63,18 +63,6 @@
 	};
 
 	/**
-	 * Produce a new vector with a different heading, rotated by the given angle
-	 *
-	 * @param angleOfRotation
-	 * @returns {Vector}
-	 */
-	Vector.prototype.rotate = function (angleOfRotation) {
-		// Adding 360° then modulus 360° clears out negative values
-		var newAngle = (this.getBearing() + angleOfRotation + 2 * Math.PI) % (2 * Math.PI);
-		return Vector.newFromPolar(this.getMagnitude(), newAngle);
-	};
-
-	/**
 	 * Create a new vector from a magnitude (i.e. radius) and an bearing (i.e. angle)
 	 *
 	 * @param {number} magnitude of the vector
@@ -105,7 +93,7 @@
 
 		// config
 		this.color = 'white';
-		this.width = 10;
+		this.width = 5;
 		this.closeness = 75;
 		this.influence = 150;
 		this.maxVelocity = 100;
