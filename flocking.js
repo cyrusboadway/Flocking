@@ -138,7 +138,7 @@
 	 *
 	 * @type {*[]}
 	 */
-	Bird.prototype.INTRA_BIRD_FUZZY_RULES = [
+	Bird.INTRA_BIRD_FUZZY_RULES = [
 		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
 			membershipFunction: function (bird, destinationBird) {
@@ -191,7 +191,7 @@
 		}
 	];
 
-	Bird.prototype.PREDATOR_FUZZY_RULES = [
+	Bird.PREDATOR_FUZZY_RULES = [
 		// RUN AWAY FROM THE PREDATOR
 		{
 			membershipFunction: function (bird, predator) {
@@ -222,7 +222,7 @@
 	Bird.prototype.considerBird = function (bird) {
 		// Check each rule against each fuzzy rule
 		var memberships = [];
-		this.INTRA_BIRD_FUZZY_RULES.forEach(function (rule) {
+		Bird.INTRA_BIRD_FUZZY_RULES.forEach(function (rule) {
 			var membership = rule.membershipFunction(this, bird);
 			memberships.push(membership);
 			if (membership > 0) {
@@ -232,7 +232,7 @@
 			}
 		}, this);
 		if(this.env.predator.active){
-			this.PREDATOR_FUZZY_RULES.forEach(function (rule) {
+			Bird.PREDATOR_FUZZY_RULES.forEach(function (rule) {
 				var membership = rule.membershipFunction(this, this.env.predator.position);
 				memberships.push(membership);
 				if (membership > 0) {
