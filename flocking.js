@@ -164,7 +164,7 @@
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
-				return Vector.newFromPolar(bird.maxAcceleration, difference.getBearing());
+				return Vector.newFromPolar(bird.maxAcceleration / 2, difference.getBearing());
 			}
 		},
 		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
@@ -186,14 +186,14 @@
 		// RUN AWAY FROM THE PREDATOR
 		{
 			membershipFunction: function (bird, predator) {
-				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.influence);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.influence * 2);
 			},
 			resultFunction: function (bird, predator) {
-				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator.position);
 				var bearing = bird.position.subtract(nearestLattice).getBearing();
-				return Vector.newFromPolar(bird.maxAcceleration * 2, bearing);
+				return Vector.newFromPolar(bird.maxAcceleration * 50, bearing);
 			}
 		}
 	];
@@ -237,10 +237,9 @@
 	Bird.prototype.considerPredator = function (predator) {
 		if(predator.active){
 			Bird.PREDATOR_FUZZY_RULES.forEach(function (rule) {
-				var membership = rule.membershipFunction(this.position, predator.position);
-				memberships.push(membership);
+				var membership = rule.membershipFunction(this, predator);
 				if (membership > 0) {
-					var result = rule.resultFunction(this.position, predator.position);
+					var result = rule.resultFunction(this, predator);
 					this.acceleration = this.acceleration.add(result.scale(membership));
 				}
 			}, this);
@@ -444,6 +443,7 @@
 		setInterval(function () {
 			env.processBirds();
 			env.birds.forEach(function (bird) {
+				bird.considerPredator(env.predator);
 				env.eraseBird(bird);
 				bird.move(1 / frameRate);
 				env.drawBird(bird);
