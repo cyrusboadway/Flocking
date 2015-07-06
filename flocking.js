@@ -202,27 +202,26 @@
 	];
 
 	/**
-	 * Recalculate the acceleration to be applied to the object (i.e. apply fuzzy logic rules).
-	 *
-	 * @param {Environment} env
+	 * On every iteration, the bird's acceleration is reconsidered from scratch. This method 'zeros' the acceleration.
 	 */
-	Bird.prototype.updateAcceleration = function (env) {
+	Bird.prototype.resetBrain = function () {
 		this.acceleration = new Vector(0, 0);
-		// Check rules for this bird to all other birds
-		env.birds.forEach(function (bird) {
-			if (this.id == bird.id) {
-				// Bird does not influence itself
-				return;
+	};
+
+	/**
+	 * Have one bird consider the influence of another bird
+	 *
+	 * @param bird
+	 */
+	Bird.prototype.considerBird = function (bird) {
+		// Check each rule against each fuzzy rule
+		this.FUZZY_RULES.forEach(function (rule) {
+			var membership = rule.membershipFunction(this, bird);
+			if (membership > 0) {
+				// the rule applies to some degree
+				var result = rule.resultFunction(this, bird);
+				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
-			// Check each rule against each fuzzy rule
-			this.FUZZY_RULES.forEach(function (rule) {
-				var membership = rule.membershipFunction(this, bird);
-				if (membership > 0) {
-					// the rule applies to some degree
-					var result = rule.resultFunction(this, bird);
-					this.acceleration = this.acceleration.add(result.scale(membership));
-				}
-			}, this);
 		}, this);
 	};
 
@@ -300,6 +299,81 @@
 	};
 
 	/**
+	 * Trigger each bird to consider all other birds. By creating arrays of birds sorted by a dimension of their
+	 * position, birds need only consider a small set of the nearby birds, rather than a complete set
+	 */
+	Environment.prototype.processBirds = function () {
+		var sortParam = 'x';
+		// Reusable callback to sort an array of birds
+		var sort = function (a, b) {
+			return a.position[sortParam] - b.position[sortParam];
+		};
+		// Reset all the birds
+		this.birds.forEach(function (bird, index) {
+			this.birds[index].resetBrain();
+		}, this);
+
+		// create copies of the birds, sorting them by x & y positions
+		var sortedX = this.birds.slice(0).sort(sort);
+		sortParam = 'y';
+		var sortedY = this.birds.slice(0).sort(sort);
+
+		// 'HashSet' to prevent redundant comparisons (size will be n² by the end)
+		var consideredPairs = {};
+
+		// Process each set of birds
+		consideredPairs = this.processOrderedSet(sortedX, 'x', consideredPairs);
+		this.processOrderedSet(sortedY, 'y', consideredPairs);
+		window.a = consideredPairs;
+	};
+
+	/**
+	 * Given an array of birds that have been sorted in a particular dimension of their position, have each bird
+	 * consider each other bird within a certain maximum distance
+	 *
+	 * @param {Bird[]}    orderedSet        Array of birds sorted by a particular dimension of their position (i.e. x/y)
+	 * @param {string}    dimension        The dimension by which they are sorted
+	 * @param {*}        consideredPairs    A 'hash set' of pairs of ids which have already been considered
+	 * @returns {*}
+	 */
+	Environment.prototype.processOrderedSet = function (orderedSet, dimension, consideredPairs) {
+		var MAX_COMPARABLE_DISTANCE = 300;
+		var count = orderedSet.length;
+		for (var i = 0; i < count; i++) {
+			var isOutOfRange = false;
+			var iBirdid = orderedSet[i].id;
+
+			// Cycle through subsequent birds until loop complete or birds too far apart in sorted dimension
+			for (var j = (i + 1) % count; i != j && !isOutOfRange; j = (j + 1) % count) {
+				var jBirdid = orderedSet[j].id;
+
+				// Check if this pair of ids has already been looked at (from a previous call to this method)
+				var pairHashKey = '' + Math.min(iBirdid, jBirdid) + 'x' + Math.max(iBirdid, jBirdid);
+				if (consideredPairs.hasOwnProperty(pairHashKey)) {
+					continue;
+				}
+				consideredPairs[pairHashKey] = true;
+
+				// In sorted dimension, are birds too far to influence each other?
+				var dimensionSeparation = Math.abs(this.birds[iBirdid].position[dimension]
+					- this.birds[jBirdid].position[dimension]);
+				if (dimensionSeparation > MAX_COMPARABLE_DISTANCE && dimensionSeparation < this.canvas.height - MAX_COMPARABLE_DISTANCE) {
+					isOutOfRange = true;
+					continue;
+				}
+
+				// Are birds close enough to affect each other
+				var distance = this.birds[i].position.subtract(this.birds[j].position).getMagnitude();
+				if (distance < MAX_COMPARABLE_DISTANCE) {
+					this.birds[iBirdid].considerBird(this.birds[jBirdid]);
+					this.birds[jBirdid].considerBird(this.birds[iBirdid]);
+				}
+			}
+		}
+		return consideredPairs;
+	};
+
+	/**
 	 * Since the canvas "wraps", birds on opposite sides of the canvas should be influenced across the canvas edge,
 	 * rather than directly
 	 *
@@ -326,13 +400,12 @@
 	 * Big time sequence moving the birds, having them interact with each other
 	 */
 	Environment.prototype.run = function () {
-		var birds = this.birds;
 		var env = this;
 		var frameRate = this.frameRate;
 		setInterval(function () {
-			birds.forEach(function (bird) {
+			env.processBirds();
+			env.birds.forEach(function (bird) {
 				env.eraseBird(bird);
-				bird.updateAcceleration(env);
 				bird.move(1 / frameRate);
 				env.drawBird(bird);
 			});
