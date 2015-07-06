@@ -303,6 +303,10 @@
 	 * position, birds need only consider a small set of the nearby birds, rather than a complete set
 	 */
 	Environment.prototype.processBirds = function () {
+		env.birds.forEach(function (bird) {
+			bird.resetBrain();
+		});
+
 		// Reusable callback to sort an array of birds
 		var sortParam = 'x';
 		var sort = function (a, b) {
@@ -316,7 +320,6 @@
 		sortParam = 'y';
 		sortedBirds.sort(sort);
 		this.processOrderedSet(sortedBirds, 'y', consideredPairs);
-		window.a = consideredPairs;
 	};
 
 	/**
@@ -398,7 +401,6 @@
 			env.processBirds();
 			env.birds.forEach(function (bird) {
 				env.eraseBird(bird);
-				bird.resetBrain();
 				bird.move(1 / frameRate);
 				env.drawBird(bird);
 			});
@@ -415,4 +417,4 @@
 	}
 	env.run();
 
-}(document, window, 'canvas', 200));
+}(document, window, 'canvas', 150));
