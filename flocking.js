@@ -68,7 +68,7 @@
 	 * @param angleOfRotation
 	 * @returns {Vector}
 	 */
-	Vector.prototype.rotate = function(angleOfRotation) {
+	Vector.prototype.rotate = function (angleOfRotation) {
 		// Adding 360° then modulus 360° clears out negative values
 		var newAngle = (this.getBearing() + angleOfRotation + 2 * Math.PI) % (2 * Math.PI);
 		return Vector.newFromPolar(this.getMagnitude(), newAngle);
@@ -104,6 +104,7 @@
 		this.env = null;
 
 		// config
+		this.color = 'white';
 		this.width = 10;
 		this.closeness = 200;
 		this.influence = 400;
@@ -215,14 +216,23 @@
 	 */
 	Bird.prototype.considerBird = function (bird) {
 		// Check each rule against each fuzzy rule
+		var memberships = [];
 		this.FUZZY_RULES.forEach(function (rule) {
 			var membership = rule.membershipFunction(this, bird);
+			memberships.push(membership);
 			if (membership > 0) {
 				// the rule applies to some degree
 				var result = rule.resultFunction(this, bird);
 				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
 		}, this);
+		var color = memberships
+			.slice(0,3)
+			.map(function (membership) {
+				return Math.floor(255 * (1 - membership));
+			})
+			.join(',');
+		bird.color = 'rgb(' + color + ')';
 	};
 
 	/**
@@ -293,8 +303,7 @@
 	 * @param {Bird} bird
 	 */
 	Environment.prototype.drawBird = function (bird) {
-		var colors = ['white', 'red', 'blue', 'green'];
-		this.context.fillStyle = colors[bird.id % colors.length];
+		this.context.fillStyle = bird.color;
 		this.context.fillRect(Math.round(bird.position.x), Math.round(bird.position.y), bird.width, bird.width);
 	};
 
@@ -417,4 +426,4 @@
 	}
 	env.run();
 
-}(document, window, 'canvas', 150));
+}(document, window, 'canvas', 100));
