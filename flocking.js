@@ -106,10 +106,11 @@
 		// config
 		this.color = 'white';
 		this.width = 10;
-		this.closeness = 200;
-		this.influence = 400;
+		this.closeness = 75;
+		this.influence = 150;
 		this.maxVelocity = 100;
-		this.maxVelocityJitter = 0.2;
+		this.maxAcceleration = 100;
+		this.maxVelocityJitter = 0.3;
 		this.fieldOfVision = Math.PI;
 	};
 
@@ -164,7 +165,7 @@
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = bird.position.subtract(nearestLattice);
-				return Vector.newFromPolar(1000 / difference.getMagnitude(), difference.getBearing());
+				return Vector.newFromPolar(5000 / difference.getMagnitude(), difference.getBearing());
 			}
 		},
 		// CLOSE, PUSH TOGETHER: close enough to be influenced, bringing them closer together
@@ -181,7 +182,7 @@
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
-				return Vector.newFromPolar(10, difference.getBearing());
+				return Vector.newFromPolar(bird.maxAcceleration, difference.getBearing());
 			}
 		},
 		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
@@ -197,12 +198,13 @@
 			resultFunction: function (bird, destinationBird) {
 				//var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
-				return Vector.newFromPolar(10, destinationBird.velocity.getBearing());
+				return Vector.newFromPolar(bird.maxAcceleration, destinationBird.velocity.getBearing());
 			}
 		}
 	];
 
 	Bird.prototype.PREDATOR_FUZZY_RULES = [
+		// RUN AWAY FROM THE PREDATOR
 		{
 			membershipFunction: function (bird, predator) {
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
@@ -212,7 +214,7 @@
 			resultFunction: function (bird, predator) {
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
 				var bearing = bird.position.subtract(nearestLattice).getBearing();
-				return Vector.newFromPolar(100, bearing);
+				return Vector.newFromPolar(bird.maxAcceleration * 2, bearing);
 			}
 		}
 	];
