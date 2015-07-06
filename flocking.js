@@ -142,9 +142,6 @@
 		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
 			membershipFunction: function (bird, destinationBird) {
-				if (!Bird.inFieldOfVision(bird, destinationBird)) {
-					return 0;
-				}
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness);
@@ -159,9 +156,6 @@
 		// CLOSE, PUSH TOGETHER: close enough to be influenced, bringing them closer together
 		{
 			membershipFunction: function (bird, destinationBird) {
-				if (!Bird.inFieldOfVision(bird, destinationBird)) {
-					return 0;
-				}
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, 2 * bird.closeness, 3 * bird.closeness);
@@ -176,9 +170,6 @@
 		// CLOSE, CHANGE DIRECTION: close enough to be influenced, push their directions towards parallel
 		{
 			membershipFunction: function (bird, destinationBird) {
-				if (!Bird.inFieldOfVision(bird, destinationBird)) {
-					return 0;
-				}
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, (bird.closeness + bird.influence) / 2, bird.influence);
@@ -223,7 +214,10 @@
 		// Check each rule against each fuzzy rule
 		var memberships = [];
 		Bird.INTRA_BIRD_FUZZY_RULES.forEach(function (rule) {
-			var membership = rule.membershipFunction(this, bird);
+			var membership = 0;
+			if(Bird.inFieldOfVision(this, bird)){
+				membership = rule.membershipFunction(this, bird);
+			}
 			memberships.push(membership);
 			if (membership > 0) {
 				// the rule applies to some degree
@@ -231,23 +225,19 @@
 				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
 		}, this);
-		if(this.env.predator.active){
+	};
+
+	Bird.prototype.considerPredator = function (predator) {
+		if(predator.active){
 			Bird.PREDATOR_FUZZY_RULES.forEach(function (rule) {
-				var membership = rule.membershipFunction(this, this.env.predator.position);
+				var membership = rule.membershipFunction(this.position, predator.position);
 				memberships.push(membership);
 				if (membership > 0) {
-					var result = rule.resultFunction(this, this.env.predator.position);
+					var result = rule.resultFunction(this.position, predator.position);
 					this.acceleration = this.acceleration.add(result.scale(membership));
 				}
 			}, this);
 		}
-		var color = memberships
-			.slice(0, this.env.predator.active ? 4 : 3)
-			.map(function (membership) {
-				return Math.floor(255 * (1 - membership));
-			})
-			.join(',');
-		bird.color = (this.env.predator.active ? 'rgba(' : 'rgb(' ) + color + ')';
 	};
 
 	/**
