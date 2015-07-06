@@ -207,7 +207,7 @@
 			membershipFunction: function (bird, predator) {
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
-				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness * 3);
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.influence);
 			},
 			resultFunction: function (bird, predator) {
 				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
@@ -241,21 +241,23 @@
 				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
 		}, this);
-		this.PREDATOR_FUZZY_RULES.forEach(function (rule) {
-			var membership = rule.membershipFunction(this, new Vector(300, 300));
-			memberships.push(membership);
-			if (membership > 0) {
-				var result = rule.resultFunction(this, new Vector(300, 300));
-				this.acceleration = this.acceleration.add(result.scale(membership));
-			}
-		}, this);
+		if(this.env.predator.active){
+			this.PREDATOR_FUZZY_RULES.forEach(function (rule) {
+				var membership = rule.membershipFunction(this, this.env.predator.position);
+				memberships.push(membership);
+				if (membership > 0) {
+					var result = rule.resultFunction(this, this.env.predator.position);
+					this.acceleration = this.acceleration.add(result.scale(membership));
+				}
+			}, this);
+		}
 		var color = memberships
-			.slice(0, 3)
+			.slice(0, this.env.predator.active ? 4 : 3)
 			.map(function (membership) {
 				return Math.floor(255 * (1 - membership));
 			})
 			.join(',');
-		bird.color = 'rgb(' + color + ')';
+		bird.color = (this.env.predator.active ? 'rgba(' : 'rgb(' ) + color + ')';
 	};
 
 	/**
@@ -271,6 +273,13 @@
 		// wrap around canvas edges
 		this.position.x = (this.position.x + this.env.canvas.width) % this.env.canvas.width;
 		this.position.y = (this.position.y + this.env.canvas.height) % this.env.canvas.height;
+	};
+
+// Predator
+
+	var Predator = function (env, x, y) {
+		this.position = new Vector(x, y);
+		this.active = false;
 	};
 
 // Environment
@@ -289,6 +298,22 @@
 		this.canvas.height = this.canvas.offsetHeight;
 		this.context = this.canvas.getContext('2d');
 		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+		// Prepare predator
+		var self = this;
+		this.predator = new Predator(0, 0);
+		this.canvas.addEventListener('mousemove', function(event){
+			var rect = self.canvas.getBoundingClientRect();
+			self.predator.position = new Vector(event.clientX - rect.left, event.clientY - rect.top);
+		}, false);
+		this.canvas.addEventListener('mousedown', function(){
+			var rect = self.canvas.getBoundingClientRect();
+			self.predator.position = new Vector(event.clientX - rect.left, event.clientY - rect.top);
+			self.predator.active = true;
+		}, false);
+		this.canvas.addEventListener('mouseup', function(){
+			self.predator.active = false;
+		}, false);
 	};
 
 	/**
