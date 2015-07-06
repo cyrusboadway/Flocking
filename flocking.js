@@ -225,6 +225,13 @@
 				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
 		}, this);
+		var color = memberships
+			.slice(0, 3)// make sure only the first three rules contribute to the color.
+			.map(function (membership) {
+				return Math.floor(255 * (1 - membership));
+			})
+			.join(',');
+		bird.color = 'rgb(' + color + ')';
 	};
 
 	Bird.prototype.considerPredator = function (predator) {
