@@ -303,27 +303,19 @@
 	 * position, birds need only consider a small set of the nearby birds, rather than a complete set
 	 */
 	Environment.prototype.processBirds = function () {
-		var sortParam = 'x';
 		// Reusable callback to sort an array of birds
+		var sortParam = 'x';
 		var sort = function (a, b) {
 			return a.position[sortParam] - b.position[sortParam];
 		};
-		// Reset all the birds
-		this.birds.forEach(function (bird, index) {
-			this.birds[index].resetBrain();
-		}, this);
 
-		// create copies of the birds, sorting them by x & y positions
-		var sortedX = this.birds.slice(0).sort(sort);
+		// create copies of the birds, sort by 'x' dimension
+		var sortedBirds = this.birds.slice(0).sort(sort);
+		var consideredPairs = this.processOrderedSet(sortedBirds, 'x', {});
+		// re-sort by 'y' dimension
 		sortParam = 'y';
-		var sortedY = this.birds.slice(0).sort(sort);
-
-		// 'HashSet' to prevent redundant comparisons (size will be n² by the end)
-		var consideredPairs = {};
-
-		// Process each set of birds
-		consideredPairs = this.processOrderedSet(sortedX, 'x', consideredPairs);
-		this.processOrderedSet(sortedY, 'y', consideredPairs);
+		sortedBirds.sort(sort);
+		this.processOrderedSet(sortedBirds, 'y', consideredPairs);
 		window.a = consideredPairs;
 	};
 
@@ -406,6 +398,7 @@
 			env.processBirds();
 			env.birds.forEach(function (bird) {
 				env.eraseBird(bird);
+				bird.resetBrain();
 				bird.move(1 / frameRate);
 				env.drawBird(bird);
 			});
