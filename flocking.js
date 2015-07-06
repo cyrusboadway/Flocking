@@ -149,19 +149,19 @@
 	 *
 	 * @type {*[]}
 	 */
-	Bird.prototype.FUZZY_RULES = [
+	Bird.prototype.INTRA_BIRD_FUZZY_RULES = [
 		// TOO CLOSE: birds are really close, need to be pushed apart
 		{
 			membershipFunction: function (bird, destinationBird) {
 				if (!Bird.inFieldOfVision(bird, destinationBird)) {
 					return 0;
 				}
-				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness);
 			},
 			resultFunction: function (bird, destinationBird) {
-				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = bird.position.subtract(nearestLattice);
 				return Vector.newFromPolar(1000 / difference.getMagnitude(), difference.getBearing());
@@ -173,12 +173,12 @@
 				if (!Bird.inFieldOfVision(bird, destinationBird)) {
 					return 0;
 				}
-				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, 2 * bird.closeness, 3 * bird.closeness);
 			},
 			resultFunction: function (bird, destinationBird) {
-				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				var difference = nearestLattice.subtract(bird.position);
 				return Vector.newFromPolar(10, difference.getBearing());
@@ -190,7 +190,7 @@
 				if (!Bird.inFieldOfVision(bird, destinationBird)) {
 					return 0;
 				}
-				var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, destinationBird.position);
 				var distance = bird.position.subtract(nearestLattice).getMagnitude();
 				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, bird.closeness, (bird.closeness + bird.influence) / 2, bird.influence);
 			},
@@ -198,6 +198,21 @@
 				//var nearestLattice = env.findClosestLatticeLocation(bird, destinationBird);
 				// Get the bearing pointing from the destination to the origin (i.e. away from the other bird)
 				return Vector.newFromPolar(10, destinationBird.velocity.getBearing());
+			}
+		}
+	];
+
+	Bird.prototype.PREDATOR_FUZZY_RULES = [
+		{
+			membershipFunction: function (bird, predator) {
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
+				var distance = bird.position.subtract(nearestLattice).getMagnitude();
+				return Bird.FUZZY_MEMBERSHIP_FUNCTIONS['Triangle'](distance, 0, 0, bird.closeness * 3);
+			},
+			resultFunction: function (bird, predator) {
+				var nearestLattice = env.findClosestLatticeLocation(bird.position, predator);
+				var bearing = bird.position.subtract(nearestLattice).getBearing();
+				return Vector.newFromPolar(100, bearing);
 			}
 		}
 	];
@@ -217,7 +232,7 @@
 	Bird.prototype.considerBird = function (bird) {
 		// Check each rule against each fuzzy rule
 		var memberships = [];
-		this.FUZZY_RULES.forEach(function (rule) {
+		this.INTRA_BIRD_FUZZY_RULES.forEach(function (rule) {
 			var membership = rule.membershipFunction(this, bird);
 			memberships.push(membership);
 			if (membership > 0) {
@@ -226,8 +241,16 @@
 				this.acceleration = this.acceleration.add(result.scale(membership));
 			}
 		}, this);
+		this.PREDATOR_FUZZY_RULES.forEach(function (rule) {
+			var membership = rule.membershipFunction(this, new Vector(300, 300));
+			memberships.push(membership);
+			if (membership > 0) {
+				var result = rule.resultFunction(this, new Vector(300, 300));
+				this.acceleration = this.acceleration.add(result.scale(membership));
+			}
+		}, this);
 		var color = memberships
-			.slice(0,3)
+			.slice(0, 3)
 			.map(function (membership) {
 				return Math.floor(255 * (1 - membership));
 			})
@@ -381,11 +404,11 @@
 	 * Since the canvas "wraps", birds on opposite sides of the canvas should be influenced across the canvas edge,
 	 * rather than directly
 	 *
-	 * @param {Bird} originBird
-	 * @param {Bird} destinationBird
+	 * @param {Vector} origin
+	 * @param {Vector} destination
 	 * @returns {Vector}
 	 */
-	Environment.prototype.findClosestLatticeLocation = function (originBird, destinationBird) {
+	Environment.prototype.findClosestLatticeLocation = function (origin, destination) {
 		var closestLatticeNode = function (originPosition, destinationPosition, latticePeriod) {
 			if (Math.abs(originPosition - destinationPosition) > Math.abs(originPosition - (destinationPosition - latticePeriod))) {
 				return destinationPosition - latticePeriod;
@@ -395,8 +418,8 @@
 			return destinationPosition;
 		};
 		return new Vector(
-			closestLatticeNode(originBird.position.x, destinationBird.position.x, this.canvas.width),
-			closestLatticeNode(originBird.position.y, destinationBird.position.y, this.canvas.height)
+			closestLatticeNode(origin.x, destination.x, this.canvas.width),
+			closestLatticeNode(origin.y, destination.y, this.canvas.height)
 		);
 	};
 
