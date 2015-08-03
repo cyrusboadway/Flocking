@@ -10,3 +10,11 @@ Birds accelerate in a given direction using the following rules:
 3. "Direction": when a bird is close enough, adjust one's direction to match that of the other.
 
 The birds also have a "field of vision", which restricts the influence of other birds to those in front of it.
+
+//TODO
+------
+
+- [ ] Address leaky abstractions
+- [ ] Better encapsulate Fuzzy Logic
+- [ ] Rewrite Environment as solely responsible for spacial geometry, move app code (like 'ticks') to app 
+- [ ] Play around with Jasmine
