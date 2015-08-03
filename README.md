@@ -14,7 +14,8 @@ The birds also have a "field of vision", which restricts the influence of other 
 //TODO
 ------
 
-- [ ] Address leaky abstractions
-- [ ] Better encapsulate Fuzzy Logic
+- [x] Better encapsulate Fuzzy Logic
 - [ ] Rewrite Environment as solely responsible for spacial geometry, move app code (like 'ticks') to app 
+- [ ] Address leaky abstractions
+- [ ] Improve performance with web workers
 - [ ] Play around with Jasmine
