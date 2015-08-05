@@ -29,19 +29,13 @@ requirejs(['lib/Environment'], function (Environment) {
 			bird.resetBrain();
 		});
 
-		// Reusable callback to sort an array of birds
-		var sortParam = 'x';
-		var sort = function (a, b) {
-			return a.position[sortParam] - b.position[sortParam];
-		};
+		// Sort the birds along the larger dimension (greater chance of bird separation)
+		var sortDimension = (this.env.width > this.env.height) ? 'x' : 'y';
 
-		// create copies of the birds, sort by 'x' dimension
-		var sortedBirds = this.env.birds.slice(0).sort(sort);
-		var consideredPairs = this.processOrderedSet(sortedBirds, 'x', {});
-		// re-sort by 'y' dimension
-		sortParam = 'y';
-		sortedBirds.sort(sort);
-		this.processOrderedSet(sortedBirds, 'y', consideredPairs);
+		this.env.birds.sort(function (a, b) {
+			return a.position[sortDimension] - b.position[sortDimension];
+		});
+		this.processOrderedSet(this.env.birds, sortDimension);
 	};
 
 	/**
@@ -50,10 +44,9 @@ requirejs(['lib/Environment'], function (Environment) {
 	 *
 	 * @param {Bird[]}    orderedSet        Array of birds sorted by a particular dimension of their position (i.e. x/y)
 	 * @param {string}    dimension        The dimension by which they are sorted
-	 * @param {*}        consideredPairs    A 'hash set' of pairs of ids which have already been considered
-	 * @returns {*}
 	 */
-	App.prototype.processOrderedSet = function (orderedSet, dimension, consideredPairs) {
+	App.prototype.processOrderedSet = function (orderedSet, dimension) {
+		var consideredPairs = {};
 		var MAX_COMPARABLE_DISTANCE = 300;
 		var count = orderedSet.length;
 		for (var i = 0; i < count; i++) {
@@ -87,7 +80,6 @@ requirejs(['lib/Environment'], function (Environment) {
 				}
 			}
 		}
-		return consideredPairs;
 	};
 
 	/**
